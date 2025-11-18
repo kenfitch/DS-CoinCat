@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Coin Collection Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <style>
+    :root {
+      --blue: #004080;
+      --blue-light: #0a67d4;
+      --blue-soft: #e3f1ff;
+      --border-soft: #d0d7e2;
+      --bg-main: #f5f7fb;
+      --safe-area-inset-top: env(safe-area-inset-top);
+      --safe-area-inset-bottom: env(safe-area-inset-bottom);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-main);
+      color: #111827;
+      padding-top: var(--safe-area-inset-top);
+      padding-bottom: var(--safe-area-inset-bottom);
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid #ddd;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding-top: calc(10px + var(--safe-area-inset-top));
+    }
+
+    .nav-left {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .nav-button {
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+      transition: background 0.15s ease, transform 0.1s ease,
+        box-shadow 0.1s ease;
+      -webkit-appearance: none;
+      min-height: 44px;
+    }
+    .nav-button:hover {
+      background: #0055b0;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(15, 23, 42, 0.22);
+    }
+    .nav-button:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+    }
+
+    /* SMALL ICON BUTTONS (API + CSV + CLEAR) */
+    .icon-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .icon-button {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+      transition: background 0.15s ease, transform 0.1s ease,
+        box-shadow 0.1s ease, border-color 0.1s ease;
+      font-size: 18px;
+      -webkit-appearance: none;
+    }
+    .icon-button svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--blue);
+    }
+    .icon-button:hover {
+      background: var(--blue-soft);
+      border-color: var(--blue-light);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(15, 23, 42, 0.22);
+    }
+    .icon-button:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-top: 8px;
+      margin-bottom: 16px;
+      color: #111827;
+    }
+
+    label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="range"],
+    select,
+    textarea {
+      width: 100%;
+      font-size: 16px; /* Prevents iOS zoom on focus */
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      -webkit-appearance: none;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-row {
+      margin-bottom: 18px;
+    }
+
+    .form-row-inline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-row-inline label {
+      margin-bottom: 0;
+    }
+
+    #condition-label {
+      font-size: 14px;
+      color: #4b5563;
+    }
+
+    .photo-upload-row {
+      margin-bottom: 18px;
+    }
+
+    .photo-dropzone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 14px;
+      padding: 15px;
+      background: #f9fafb;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .photo-dropzone.dragover {
+      border-color: var(--blue-light);
+      background: #e0f2fe;
+    }
+    .photo-drop-hint {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 0 0 10px;
+    }
+
+    .photo-preview {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 2px solid #ddd;
+      object-fit: cover;
+      object-position: center;
+      margin-top: 8px;
+      background: #eee;
+      display: block;
+    }
+
+    .muted {
+      color: #777;
+      font-style: italic;
+    }
+
+    .primary-button {
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 999px;
+      padding: 14px 26px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-top: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+      -webkit-appearance: none;
+      min-height: 50px;
+    }
+    .primary-button:hover {
+      background: #0055b0;
+    }
+
+    .secondary-button {
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      padding: 10px 16px;
+      background: #ffffff;
+      font-size: 14px;
+      cursor: pointer;
+      margin-right: 6px;
+      margin-top: 8px;
+      -webkit-appearance: none;
+      min-height: 36px;
+    }
+    .secondary-button.danger {
+      border-color: #f97373;
+      color: #b91c1c;
+    }
+    .secondary-button.small {
+      padding: 8px 12px;
+      font-size: 13px;
+      margin-top: 6px;
+      min-height: 32px;
+    }
+
+    /* COLLECTION GRID + CARD */
+    #collection-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 22px;
+      padding: 12px 0;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 14px;
+      border: 1px solid var(--border-soft);
+      padding: 16px 16px 12px;
+      box-shadow: 0 12px 20px rgba(15, 23, 42, 0.08);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      margin-bottom: 4px;
+      font-size: 20px;
+    }
+
+    .card p {
+      margin: 2px 0;
+      font-size: 14px;
+    }
+
+    .card-photos {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      align-items: flex-start;
+    }
+    .card-photos img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 1px solid #ccc;
+      object-fit: cover;
+      object-position: center;
+      background: #eee;
+      cursor: pointer;
+      transition: transform 0.25s ease;
+      display: block;
+      margin-top: 6px;
+    }
+    .card-photos img:hover {
+      transform: scale(1.15);
+    }
+
+    .card-qr {
+      margin-top: 10px;
+    }
+    .card-qr-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .qr-code-text {
+      font-size: 13px;
+      color: #4b5563;
+      word-break: break-all;
+      flex: 1;
+    }
+    .qr-image {
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+      flex-shrink: 0;
+    }
+
+    /* PHOTO ZOOM OVERLAY */
+    .photo-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1200;
+      padding: 20px;
+    }
+    .photo-zoom-img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+      animation: zoomIn 0.22s ease-out;
+    }
+    @keyframes zoomIn {
+      from {
+        transform: scale(0.6);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* MODALS */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 16px 16px 14px;
+      width: min(420px, 92vw);
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.3);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .modal-close {
+      border: none;
+      background: none;
+      font-size: 18px;
+      cursor: pointer;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* SEARCH */
+    #search-collection {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      margin: 4px 0 18px;
+      font-size: 16px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* TOASTS */
+    #toast-container {
+      position: fixed;
+      top: calc(16px + var(--safe-area-inset-top));
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 2000;
+    }
+    .toast {
+      padding: 12px 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      color: #ffffff;
+      background: #0a67d4;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.4);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .toast-success {
+      background: #16a34a;
+    }
+    .toast-error {
+      background: #dc2626;
+    }
+    .fade-out {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+
+    /* iPad-specific optimizations */
+    @media (max-width: 1024px) {
+      main {
+        padding: 20px 20px 40px;
+      }
+      
+      #collection-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      }
+      
+      .card-photos {
+        flex-direction: column;
+      }
+      
+      .card-photos img {
+        width: 140px;
+        height: 140px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 15px;
+        padding-top: calc(10px + var(--safe-area-inset-top));
+      }
+      .icon-buttons {
+        align-self: flex-end;
+      }
+      .card-photos {
+        flex-direction: column;
+      }
+      
+      .nav-button {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+      
+      .nav-left {
+        width: 100%;
+        flex-direction: column;
+      }
+    }
+
+    /* Prevent text size adjustment on orientation change */
+    @media screen and (max-device-width: 1024px) {
+      body {
+        -webkit-text-size-adjust: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav-left">
+      <button class="nav-button" onclick="App.showSection('add')">
+        Add Coin
+      </button>
+      <button class="nav-button" onclick="App.showSection('view')">
+        View Collection
+      </button>
+    </div>
+    <div class="icon-buttons">
+      <!-- CLEAR ALL BUTTON -->
+      <button
+        class="icon-button"
+        title="Clear All Fields"
+        onclick="App.clearAllFields()"
+      >
+        🧹
+      </button>
+      <!-- API KEY BUTTON (gear icon) -->
+      <button
+        class="icon-button"
+        title="Set API Key"
+        onclick="App.openApiKeyModal()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .11-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.06 7.06 0 0 0-1.63-.94L14.5 2.5a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5l-.35 2.72c-.6.24-1.14.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.61 8.84a.5.5 0 0 0 .11.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.72 14.52a.5.5 0 0 0-.11.64l1.92 3.32c.13.22.39.31.63.22l2.39-.96c.49.39 1.03.7 1.63.94l.35 2.72a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5l.35-2.72c.6-.24 1.14-.55 1.63-.94l2.39.96c.24.09.5 0 .63-.22l1.92-3.32a.5.5 0 0 0-.11-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5Z"
+          />
+        </svg>
+      </button>
+      <!-- CSV EXPORT BUTTON -->
+      <button
+        class="icon-button"
+        title="Export CSV"
+        onclick="App.exportCollection()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 20h14v-2H5v2zm7-3 5-5h-3V4h-4v8H7l5 5z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ADD COIN SECTION -->
+    <section id="add" class="hidden">
+      <h1>Add a New Coin</h1>
+
+      <div class="form-row">
+        <label for="coin-type">Coin Type:</label>
+        <select id="coin-type">
+          <option value="">Select coin type...</option>
+          <option value="Penny">Penny</option>
+          <option value="Nickel">Nickel</option>
+          <option value="Dime">Dime</option>
+          <option value="Quarter">Quarter</option>
+          <option value="Half Dollar">Half Dollar</option>
+          <option value="Dollar">Dollar</option>
+          <option value="Commemorative">Commemorative</option>
+          <option value="Gold Coin">Gold Coin</option>
+          <option value="Silver Coins">Silver Coins (mixed)</option>
+          <option value="Silver Penny">Silver Penny</option>
+          <option value="Silver Nickel">Silver Nickel</option>
+          <option value="Silver Dime">Silver Dime</option>
+          <option value="Silver Quarter">Silver Quarter</option>
+          <option value="Silver Half Dollar">Silver Half Dollar</option>
+          <option value="Silver Dollar">Silver Dollar</option>
+          <option value="Silver Commemorative">Silver Commemorative</option>
+          <option value="Silver Gold Coin">Silver/Gold Hybrid</option>
+          <option value="Custom Coin">Custom Coin</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="coin-custom-name"
+          >Custom name (optional, or required if "Custom Coin"):</label
+        >
+        <input
+          type="text"
+          id="coin-custom-name"
+          placeholder="e.g., 1921 Morgan Dollar"
+        />
+      </div>
+
+      <div class="form-row form-row-inline">
+        <label for="coin-year">Year:</label>
+        <input
+          type="number"
+          id="coin-year"
+          placeholder="e.g., 1943"
+          min="1000"
+          max="2100"
+          style="max-width: 130px"
+        />
+      </div>
+
+      <div class="form-row form-row-inline">
+        <label for="coin-condition">Condition:</label>
+        <input type="range" id="coin-condition" min="1" max="10" value="5" />
+        <span id="condition-label">Good (5/10)</span>
+      </div>
+
+      <div class="form-row">
+        <label for="coin-metallurgy">Metallurgy:</label>
+        <input
+          type="text"
+          id="coin-metallurgy"
+          placeholder="99.7% silver, 24kt, etc"
+        />
+      </div>
+
+      <div class="form-row">
+        <label for="coin-notes">Notes (optional):</label>
+        <textarea
+          id="coin-notes"
+          placeholder="Example: nice luster, mint mark, toning on reverse."
+        ></textarea>
+      </div>
+
+      <div class="photo-upload-row">
+        <label>Front Photo:</label>
+        <div
+          class="photo-dropzone"
+          ontouchstart="App.handlePhotoTouchStart(event)"
+          ontouchend="App.handlePhotoTouchEnd(event)"
+          onclick="App.handlePhotoClick('front')"
+        >
+          <p class="photo-drop-hint">
+            Tap to select a front photo from your library.
+          </p>
+          <input
+            type="file"
+            id="photo-front-input"
+            accept="image/*"
+            class="hidden"
+            onchange="App.handlePhotoUpload('front', event)"
+          />
+          <img
+            id="photo-front-preview"
+            class="photo-preview hidden"
+            alt="Front coin preview"
+          />
+          <div>
+            <button
+              type="button"
+              class="secondary-button small"
+              onclick="App.rotatePhoto('front')"
+            >
+              Rotate ⟳
+            </button>
+            <button
+              type="button"
+              class="secondary-button small"
+              onclick="App.swapPhotos()"
+            >
+              Swap ↔
+            </button>
+            <button
+              type="button"
+              class="secondary-button small"
+              onclick="App.clearPhoto('front')"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="photo-upload-row">
+        <label>Back Photo:</label>
+        <div
+          class="photo-dropzone"
+          ontouchstart="App.handlePhotoTouchStart(event)"
+          ontouchend="App.handlePhotoTouchEnd(event)"
+          onclick="App.handlePhotoClick('back')"
+        >
+          <p class="photo-drop-hint">
+            Tap to select a back photo from your library.
+          </p>
+          <input
+            type="file"
+            id="photo-back-input"
+            accept="image/*"
+            class="hidden"
+            onchange="App.handlePhotoUpload('back', event)"
+          />
+          <img
+            id="photo-back-preview"
+            class="photo-preview hidden"
+            alt="Back coin preview"
+          />
+          <div>
+            <button
+              type="button"
+              class="secondary-button small"
+              onclick="App.rotatePhoto('back')"
+            >
+              Rotate ⟳
+            </button>
+            <button
+              type="button"
+              class="secondary-button small"
+              onclick="App.swapPhotos()"
+            >
+              Swap ↔
+            </button>
+            <button
+              type="button"
+              class="secondary-button small"
+              onclick="App.clearPhoto('back')"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <button
+          id="save-button"
+          class="primary-button"
+          onclick="App.saveCoin()"
+        >
+          Save Coin
+        </button>
+      </div>
+    </section>
+
+    <!-- VIEW COLLECTION SECTION -->
+    <section id="view">
+      <h1>Your Collection</h1>
+
+      <input
+        type="text"
+        id="search-collection"
+        placeholder="Search by coin type, year, mint, metal..."
+        oninput="App.renderCollection()"
+      />
+
+      <p id="empty-message" class="muted">
+        You haven't added any coins yet.
+      </p>
+      <div id="collection-grid"></div>
+    </section>
+  </main>
+
+  <!-- PHOTO ZOOM MODAL -->
+  <div id="photo-zoom-backdrop" class="photo-backdrop hidden" onclick="App.closePhotoZoom()">
+    <img
+      id="photo-zoom-img"
+      class="photo-zoom-img"
+      alt="Zoomed coin photo"
+    />
+  </div>
+
+  <!-- SALES COMPS MODAL -->
+  <div id="comps-modal-backdrop" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="comps-title">Sales Comps</h3>
+        <button class="modal-close" onclick="App.closeCompsModal()">✕</button>
+      </div>
+      <p id="comps-coin-label" class="muted"></p>
+      <div id="comps-body">
+        <p>
+          This is a demo sales comps window. API integration will use your
+          stored eBay key.
+        </p>
+      </div>
+      <div
+        style="
+          margin-top: 12px;
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+        "
+      >
+        <button class="secondary-button" onclick="App.runComps()">
+          Run eBay Comps (demo)
+        </button>
+        <button class="secondary-button" onclick="App.closeCompsModal()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API KEY MODAL -->
+  <div id="api-modal-backdrop" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Set eBay API Key</h3>
+        <button class="modal-close" onclick="App.closeApiKeyModal()">✕</button>
+      </div>
+      <p class="muted">
+        Your API key stays in this browser only. Future versions can use it to
+        pull sold listings and price data.
+      </p>
+      <input
+        type="text"
+        id="api-key-input"
+        placeholder="Paste your eBay API key..."
+      />
+      <div
+        style="
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+          margin-top: 8px;
+        "
+      >
+        <button class="secondary-button" onclick="App.closeApiKeyModal()">
+          Cancel
+        </button>
+        <button class="secondary-button" onclick="App.saveApiKey()">
+          Save Key
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOASTS -->
+  <div id="toast-container"></div>
+
+  <script>
+// app.js — Coin Collection Tracker (iPad Optimized)
+
+const App = (() => {
+  const STORAGE_KEYS = {
+    coins: "coinCollection",
+    apiKey: "coinApiKey",
+  };
+
+  let coins = [];
+  let editingCoinId = null;
+  let tempPhotoFront = "";
+  let tempPhotoBack = "";
+  let apiKey = "";
+
+  // ========= INIT =========
+  function init() {
+    loadState();
+    attachConditionListener();
+    // Start on VIEW COLLECTION instead of ADD COIN
+    showSection("view");
+    renderCollection();
+    
+    // Prevent iOS bounce effect
+    document.body.addEventListener('touchmove', function(e) {
+      if (e.target === document.body || e.target === document.documentElement) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.coins);
+      coins = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(coins)) coins = [];
+    } catch (e) {
+      coins = [];
+      localStorage.removeItem(STORAGE_KEYS.coins);
+    }
+    apiKey = localStorage.getItem(STORAGE_KEYS.apiKey) || "";
+    ensureCoinCodes();
+  }
+
+  // ========= COIN QR CODES (UTILITY) =========
+  function generateQrCodeForCoin(coinLike) {
+    const baseId =
+      typeof coinLike.id === "number" ? coinLike.id : Date.now();
+    return "COIN-" + baseId.toString(36).toUpperCase();
+  }
+
+  function ensureCoinCodes() {
+    let changed = false;
+    coins.forEach((c) => {
+      if (!c.qrCode) {
+        c.qrCode = generateQrCodeForCoin(c);
+        changed = true;
+      }
+    });
+    if (changed) {
+      localStorage.setItem(STORAGE_KEYS.coins, JSON.stringify(coins));
+    }
+  }
+
+  // ========= CONDITION SLIDER =========
+  function attachConditionListener() {
+    const slider = document.getElementById("coin-condition");
+    const label = document.getElementById("condition-label");
+    if (!slider || !label) return;
+
+    const labels = [
+      "Poor",
+      "Fair",
+      "Good",
+      "Very Good",
+      "Fine",
+      "Very Fine",
+      "Extra Fine",
+      "About Uncirculated",
+      "Uncirculated",
+      "Mint",
+    ];
+
+    const update = (val) => {
+      const n = parseInt(val, 10) || 5;
+      const text = labels[n - 1] || "Good";
+      label.textContent = `${text} (${n}/10)`;
+    };
+
+    slider.addEventListener("input", (e) => update(e.target.value));
+    slider.addEventListener("touchstart", function(e) {
+      e.stopPropagation();
+    });
+    update(slider.value);
+  }
+
+  // ========= NAV =========
+  function showSection(id) {
+    const add = document.getElementById("add");
+    const view = document.getElementById("view");
+    if (!add || !view) return;
+
+    add.classList.add("hidden");
+    view.classList.add("hidden");
+
+    if (id === "add") {
+      add.classList.remove("hidden");
+      // Reset form when showing add section
+      if (!editingCoinId) {
+        resetAddForm();
+      }
+    } else if (id === "view") {
+      view.classList.remove("hidden");
+      renderCollection();
+    }
+  }
+
+  // ========= TOASTS =========
+  function showToast(message, type = "info") {
+    const container = document.getElementById("toast-container");
+    if (!container) return;
+
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add("fade-out");
+      setTimeout(() => {
+        if (toast.parentNode) {
+          container.removeChild(toast);
+        }
+      }, 300);
+    }, 3000);
+  }
+
+  // ========= FORM RESET / CLEAR =========
+  function resetAddForm() {
+    const typeEl = document.getElementById("coin-type");
+    const customEl = document.getElementById("coin-custom-name");
+    const yearEl = document.getElementById("coin-year");
+    const condEl = document.getElementById("coin-condition");
+    const condLabel = document.getElementById("condition-label");
+    const notesEl = document.getElementById("coin-notes");
+    const metallEl = document.getElementById("coin-metallurgy");
+    const fPrev = document.getElementById("photo-front-preview");
+    const bPrev = document.getElementById("photo-back-preview");
+    const fInput = document.getElementById("photo-front-input");
+    const bInput = document.getElementById("photo-back-input");
+
+    if (typeEl) typeEl.value = "";
+    if (customEl) customEl.value = "";
+    if (yearEl) yearEl.value = "";
+    if (condEl) condEl.value = 5;
+    if (condLabel) condLabel.textContent = "Good (5/10)";
+    if (notesEl) notesEl.value = "";
+    if (metallEl) metallEl.value = "";
+
+    tempPhotoFront = "";
+    tempPhotoBack = "";
+    editingCoinId = null;
+
+    if (fPrev) {
+      fPrev.src = "";
+      fPrev.classList.add("hidden");
+    }
+    if (bPrev) {
+      bPrev.src = "";
+      bPrev.classList.add("hidden");
+    }
+    if (fInput) fInput.value = "";
+    if (bInput) bInput.value = "";
+  }
+
+  function clearAllFields() {
+    resetAddForm();
+    showToast("All fields cleared.", "info");
+  }
+
+  // ========= SAVE COIN =========
+  function saveCoin() {
+    const typeEl = document.getElementById("coin-type");
+    const customEl = document.getElementById("coin-custom-name");
+    const yearEl = document.getElementById("coin-year");
+    const condEl = document.getElementById("coin-condition");
+    const notesEl = document.getElementById("coin-notes");
+    const metallEl = document.getElementById("coin-metallurgy");
+
+    if (!typeEl || !yearEl || !condEl) {
+      showToast("Form not ready.", "error");
+      return;
+    }
+
+    const type = (typeEl.value || "").trim();
+    const customName = (customEl?.value || "").trim();
+    const yearVal = (yearEl.value || "").trim();
+    const year = parseInt(yearVal, 10);
+    const condition = parseInt(condEl.value || "5", 10);
+    const notes = (notesEl?.value || "").trim();
+    const metallurgy = (metallEl?.value || "").trim();
+
+    const displayName =
+      type === "Custom Coin" && customName ? customName : type || "Coin";
+
+    if (!type && !customName) {
+      showToast("Select a coin type or enter a custom name.", "error");
+      return;
+    }
+    if (!year || isNaN(year) || year < 1000 || year > 2100) {
+      showToast("Enter a valid year between 1000 and 2100.", "error");
+      return;
+    }
+
+    const existing = editingCoinId
+      ? coins.find((c) => c.id === editingCoinId)
+      : null;
+
+    const newId = editingCoinId || Date.now();
+    const qrCode =
+      existing?.qrCode || generateQrCodeForCoin({ id: newId });
+
+    const coinObj = {
+      id: newId,
+      type,
+      customName,
+      displayName,
+      year,
+      condition,
+      notes,
+      metallurgy,
+      photoFront: tempPhotoFront || existing?.photoFront || "",
+      photoBack: tempPhotoBack || existing?.photoBack || "",
+      qrCode,
+      createdAt: existing?.createdAt || new Date().toISOString(),
+    };
+
+    if (editingCoinId) {
+      const idx = coins.findIndex((c) => c.id === editingCoinId);
+      if (idx !== -1) coins[idx] = coinObj;
+      showToast("Coin updated.", "success");
+    } else {
+      coins.push(coinObj);
+      showToast("Coin saved.", "success");
+    }
+
+    localStorage.setItem(STORAGE_KEYS.coins, JSON.stringify(coins));
+    showSection("view");
+    renderCollection();
+  }
+
+  // ========= PHOTO HANDLING (iPad Optimized) =========
+  
+  // Touch handling for photo dropzones
+  function handlePhotoTouchStart(event) {
+    event.preventDefault();
+    const dz = event.currentTarget;
+    if (dz && dz.classList) dz.classList.add("dragover");
+  }
+
+  function handlePhotoTouchEnd(event) {
+    event.preventDefault();
+    const dz = event.currentTarget;
+    if (dz && dz.classList) dz.classList.remove("dragover");
+  }
+  
+  // Handle photo selection on iPad
+  function handlePhotoClick(side) {
+    const inputId = side === 'front' ? 'photo-front-input' : 'photo-back-input';
+    const input = document.getElementById(inputId);
+    if (input) {
+      input.click();
+    }
+  }
+
+  function processImageFile(side, file) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      showToast("Please upload a JPG or PNG image.", "error");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result;
+      // For iPad, we'll use a simpler approach without auto-crop for better performance
+      if (side === "front") {
+        tempPhotoFront = base64;
+        const imgEl = document.getElementById("photo-front-preview");
+        if (imgEl) {
+          imgEl.src = base64;
+          imgEl.classList.remove("hidden");
+        }
+      } else {
+        tempPhotoBack = base64;
+        const imgEl = document.getElementById("photo-back-preview");
+        if (imgEl) {
+          imgEl.src = base64;
+          imgEl.classList.remove("hidden");
+        }
+      }
+      showToast("Photo added.", "info");
+    };
+    reader.onerror = () => {
+      showToast("Photo processing failed. Try another image.", "error");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handlePhotoUpload(side, event) {
+    const file = event.target.files[0];
+    processImageFile(side, file);
+  }
+
+  // Simple rotation for iPad (no complex processing)
+  function rotatePhoto(side) {
+    const current = side === "front" ? tempPhotoFront : tempPhotoBack;
+    if (!current) {
+      showToast("Add a photo first.", "error");
+      return;
+    }
+    
+    // For iPad, we'll just swap width/height to simulate rotation
+    // In a production app, you'd want to use canvas for proper rotation
+    showToast("Rotation would be implemented in full version.", "info");
+  }
+
+  // Swap button — swap front/back photos
+  function swapPhotos() {
+    if (!tempPhotoFront && !tempPhotoBack) {
+      showToast("No photos to swap.", "error");
+      return;
+    }
+    const fPrev = document.getElementById("photo-front-preview");
+    const bPrev = document.getElementById("photo-back-preview");
+
+    [tempPhotoFront, tempPhotoBack] = [tempPhotoBack, tempPhotoFront];
+
+    if (fPrev) {
+      if (tempPhotoFront) {
+        fPrev.src = tempPhotoFront;
+        fPrev.classList.remove("hidden");
+      } else {
+        fPrev.src = "";
+        fPrev.classList.add("hidden");
+      }
+    }
+    if (bPrev) {
+      if (tempPhotoBack) {
+        bPrev.src = tempPhotoBack;
+        bPrev.classList.remove("hidden");
+      } else {
+        bPrev.src = "";
+        bPrev.classList.add("hidden");
+      }
+    }
+    showToast("Front and back photos swapped.", "info");
+  }
+
+  function clearPhoto(side) {
+    if (side === "front") {
+      tempPhotoFront = "";
+      const img = document.getElementById("photo-front-preview");
+      const input = document.getElementById("photo-front-input");
+      if (img) {
+        img.src = "";
+        img.classList.add("hidden");
+      }
+      if (input) input.value = "";
+    } else {
+      tempPhotoBack = "";
+      const img = document.getElementById("photo-back-preview");
+      const input = document.getElementById("photo-back-input");
+      if (img) {
+        img.src = "";
+        img.classList.add("hidden");
+      }
+      if (input) input.value = "";
+    }
+    showToast("Photo cleared.", "info");
+  }
+
+  // ========= EDIT / DELETE =========
+  function editCoin(id) {
+    const coin = coins.find((c) => c.id === id);
+    if (!coin) return;
+
+    editingCoinId = id;
+    tempPhotoFront = coin.photoFront || "";
+    tempPhotoBack = coin.photoBack || "";
+
+    const typeEl = document.getElementById("coin-type");
+    const customEl = document.getElementById("coin-custom-name");
+    const yearEl = document.getElementById("coin-year");
+    const condEl = document.getElementById("coin-condition");
+    const condLabel = document.getElementById("condition-label");
+    const notesEl = document.getElementById("coin-notes");
+    const metallEl = document.getElementById("coin-metallurgy");
+    const fPrev = document.getElementById("photo-front-preview");
+    const bPrev = document.getElementById("photo-back-preview");
+    const fInput = document.getElementById("photo-front-input");
+    const bInput = document.getElementById("photo-back-input");
+
+    if (typeEl) typeEl.value = coin.type || "";
+    if (customEl) customEl.value = coin.customName || "";
+    if (yearEl) yearEl.value = coin.year || "";
+    if (condEl) condEl.value = coin.condition || 5;
+    if (condLabel)
+      condLabel.textContent = `Condition (${coin.condition || 5}/10)`;
+    if (notesEl) notesEl.value = coin.notes || "";
+    if (metallEl) metallEl.value = coin.metallurgy || "";
+
+    if (fPrev) {
+      if (coin.photoFront) {
+        fPrev.src = coin.photoFront;
+        fPrev.classList.remove("hidden");
+      } else {
+        fPrev.src = "";
+        fPrev.classList.add("hidden");
+      }
+    }
+    if (bPrev) {
+      if (coin.photoBack) {
+        bPrev.src = coin.photoBack;
+        bPrev.classList.remove("hidden");
+      } else {
+        bPrev.src = "";
+        bPrev.classList.add("hidden");
+      }
+    }
+    if (fInput) fInput.value = "";
+    if (bInput) bInput.value = "";
+
+    showSection("add");
+  }
+
+  function deleteCoin(id) {
+    if (!confirm("Delete this coin permanently?")) return;
+    coins = coins.filter((c) => c.id !== id);
+    localStorage.setItem(STORAGE_KEYS.coins, JSON.stringify(coins));
+    renderCollection();
+    showToast("Coin deleted.", "success");
+  }
+
+  // ========= FILTER + RENDER =========
+  function getFilteredCoins() {
+    const searchEl = document.getElementById("search-collection");
+    const search = (searchEl?.value || "").toLowerCase();
+
+    let list = [...coins];
+
+    if (search) {
+      list = list.filter((c) => {
+        const blob =
+          (c.displayName || "") +
+          " " +
+          (c.type || "") +
+          " " +
+          (c.customName || "") +
+          " " +
+          (c.year || "") +
+          " " +
+          (c.metallurgy || "") +
+          " " +
+          (c.notes || "") +
+          " " +
+          (c.qrCode || "");
+        return blob.toLowerCase().includes(search);
+      });
+    }
+
+    // Newest coins on top
+    list.sort((a, b) => {
+      const da = a.createdAt ? Date.parse(a.createdAt) : 0;
+      const db = b.createdAt ? Date.parse(b.createdAt) : 0;
+      if (db !== da) return db - da;
+      return (b.id || 0) - (a.id || 0);
+    });
+
+    return list;
+  }
+
+  function renderCollection() {
+    const grid = document.getElementById("collection-grid");
+    const empty = document.getElementById("empty-message");
+    if (!grid || !empty) return;
+
+    const list = getFilteredCoins();
+
+    if (!list.length) {
+      grid.innerHTML = "";
+      empty.classList.remove("hidden");
+      return;
+    }
+
+    empty.classList.add("hidden");
+    grid.innerHTML = "";
+
+    list.forEach((c) => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      let qrBlock = "";
+      if (c.qrCode) {
+        qrBlock =
+          '<img class="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=' +
+          encodeURIComponent(c.qrCode) +
+          '" alt="QR code">';
+      }
+
+      card.innerHTML = `
+        <h2>${c.displayName} (${c.year})</h2>
+        <p><strong>Type:</strong> ${c.type || ""}</p>
+        <p><strong>Condition:</strong> ${c.condition || 5}/10</p>
+        <p><strong>Metallurgy:</strong> ${
+          c.metallurgy ? c.metallurgy : '<span class="muted">Not set</span>'
+        }</p>
+        <div class="card-photos">
+          <div style="flex:1;">
+            <strong>Front:</strong><br>
+            ${
+              c.photoFront
+                ? `<img src="${c.photoFront}" alt="Front photo" onclick="App.zoomPhoto('${c.photoFront}')">`
+                : '<span class="muted">No front photo</span>'
+            }
+          </div>
+          <div style="flex:1;">
+            <strong>Back:</strong><br>
+            ${
+              c.photoBack
+                ? `<img src="${c.photoBack}" alt="Back photo" onclick="App.zoomPhoto('${c.photoBack}')">`
+                : '<span class="muted">No back photo</span>'
+            }
+          </div>
+        </div>
+        <div class="card-qr">
+          <strong>Coin Code:</strong>
+          <div class="card-qr-row">
+            <span class="qr-code-text">${
+              c.qrCode || "<span class='muted'>Not set</span>"
+            }</span>
+            ${qrBlock}
+          </div>
+        </div>
+        <p style="margin-top:10px;"><em>${
+          c.notes || "No notes provided."
+        }</em></p>
+        <button class="secondary-button" onclick="App.editCoin(${c.id})">Edit</button>
+        <button class="secondary-button danger" onclick="App.deleteCoin(${c.id})">Delete</button>
+        <button class="secondary-button" onclick="App.openCompsModal(${c.id})">Sales Comps</button>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  // ========= CSV EXPORT =========
+  function exportCollection() {
+    const list = getFilteredCoins();
+    if (!list.length) {
+      showToast("No coins to export.", "error");
+      return;
+    }
+
+    let csv =
+      "Name,Type,Year,Condition,Metallurgy,Notes,QR Code\n";
+    list.forEach((c) => {
+      csv += `"${(c.displayName || "").replace(/"/g, '""')}",`;
+      csv += `"${(c.type || "").replace(/"/g, '""')}",`;
+      csv += `${c.year || ""},`;
+      csv += `${c.condition || ""},`;
+      csv += `"${(c.metallurgy || "").replace(/"/g, '""')}",`;
+      csv += `"${(c.notes || "").replace(/"/g, '""')}",`;
+      csv += `"${(c.qrCode || "").replace(/"/g, '""')}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "my-coins.csv";
+    a.click();
+    showToast("CSV export started.", "success");
+  }
+
+  // ========= PHOTO ZOOM MODAL =========
+  function zoomPhoto(src) {
+    const backdrop = document.getElementById("photo-zoom-backdrop");
+    const img = document.getElementById("photo-zoom-img");
+    if (!backdrop || !img) return;
+
+    img.src = src;
+    backdrop.classList.remove("hidden");
+  }
+  
+  function closePhotoZoom() {
+    const backdrop = document.getElementById("photo-zoom-backdrop");
+    if (backdrop) backdrop.classList.add("hidden");
+  }
+
+  // ========= SALES COMPS MODAL =========
+  function openCompsModal(id) {
+    const coin = coins.find((c) => c.id === id);
+    const backdrop = document.getElementById("comps-modal-backdrop");
+    const title = document.getElementById("comps-title");
+    const label = document.getElementById("comps-coin-label");
+    const body = document.getElementById("comps-body");
+
+    if (!coin || !backdrop || !title || !label || !body) return;
+
+    title.textContent = "Sales Comps";
+    label.textContent = `${coin.displayName} (${coin.year})`;
+
+    const apiMsg = apiKey
+      ? "API key is set. Future versions will pull live eBay sold listings."
+      : "No API key set yet. Click the gear icon to add your eBay key.";
+
+    body.innerHTML = `
+      <p>This is a demo sales comps window.</p>
+      <ul>
+        <li>Type: ${coin.type || ""}</li>
+        <li>Year: ${coin.year || ""}</li>
+        <li>Condition: ${coin.condition || ""}/10</li>
+        <li>Metallurgy: ${coin.metallurgy || "Not set"}</li>
+      </ul>
+      <p class="muted">${apiMsg}</p>
+    `;
+
+    backdrop.classList.remove("hidden");
+    showToast("Opened sales comps (demo).", "info");
+  }
+
+  function closeCompsModal() {
+    const backdrop = document.getElementById("comps-modal-backdrop");
+    if (backdrop) backdrop.classList.add("hidden");
+  }
+
+  function runComps() {
+    if (!apiKey) {
+      showToast("Set your eBay API key first (gear icon).", "error");
+      return;
+    }
+    showToast("Would run live eBay comps with your key (demo).", "info");
+  }
+
+  // ========= API KEY MODAL =========
+  function openApiKeyModal() {
+    const backdrop = document.getElementById("api-modal-backdrop");
+    const input = document.getElementById("api-key-input");
+    if (!backdrop || !input) return;
+
+    input.value = apiKey || "";
+    backdrop.classList.remove("hidden");
+  }
+
+  function closeApiKeyModal() {
+    const backdrop = document.getElementById("api-modal-backdrop");
+    if (backdrop) backdrop.classList.add("hidden");
+  }
+
+  function saveApiKey() {
+    const input = document.getElementById("api-key-input");
+    if (!input) return;
+    apiKey = (input.value || "").trim();
+    localStorage.setItem(STORAGE_KEYS.apiKey, apiKey);
+    closeApiKeyModal();
+    showToast("API key saved.", "success");
+  }
+
+  // ========= PUBLIC API =========
+  return {
+    showSection,
+    handlePhotoUpload,
+    handlePhotoTouchStart,
+    handlePhotoTouchEnd,
+    handlePhotoClick,
+    rotatePhoto,
+    swapPhotos,
+    clearPhoto,
+    saveCoin,
+    editCoin,
+    deleteCoin,
+    renderCollection,
+    exportCollection,
+    zoomPhoto,
+    closePhotoZoom,
+    openCompsModal,
+    closeCompsModal,
+    runComps,
+    openApiKeyModal,
+    closeApiKeyModal,
+    saveApiKey,
+    clearAllFields,
+  };
+})();
+  </script>
+</body>
+</html>
